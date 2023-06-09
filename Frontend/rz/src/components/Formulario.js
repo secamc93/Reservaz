@@ -25,9 +25,9 @@ function Formulario() {
   };
 
   return (
-    <div  className="bg-green-600 bg-opacity-60 bg-center p-4 rounded-lg shadow-lg">
+    <div  className="bg-green-600 bg-opacity-20 bg-center p-4 rounded-lg shadow-lg">
       <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
-        <h2 className="text-black text-center mb-4 uppercase font-bold bg-yellow-600 bg-opacity-80 rounded-md">Formulario de Reserva</h2>
+        <h2 className="text-black text-center mb-4 uppercase font-bold  bg-opacity-80 rounded-md">Formulario de Reserva</h2>
         <label className="text-black  font-bold text-center" >
           Número de cédula:
           <input
