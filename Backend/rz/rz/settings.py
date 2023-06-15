@@ -75,7 +75,7 @@ WSGI_APPLICATION = 'rz.wsgi.application'
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 DATABASES = {
     'default': {
-        'ENGINE': 'sql_server.pyodbc',
+        'ENGINE': 'mssql',
         'NAME': 'Reservaz',
         'USER': 'sa',
         'PASSWORD': 'Seb230993#',
