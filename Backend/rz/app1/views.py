@@ -1,10 +1,14 @@
-from rest_framework             import generics
+from rest_framework             import generics, serializers
 from rest_framework.views       import APIView
 from rest_framework.response    import Response
 from .models                    import Reserva
 from .serializers               import ReservaSerializer
 from .models                    import Conductor, Vehiculo, Pasajero, Ruta, Grupo,Viaje
-from .serializers               import ConductorSerializer, VehiculoSerializer, PasajeroSerializer, RutaSerializer, GrupoSerializer,ViajeSerializer
+from .serializers               import ConductorSerializer, VehiculoSerializer, PasajeroSerializer, RutaSerializer, GrupoSerializer,ViajeSerializer, ReservaCreateSerializer
+from rest_framework             import generics
+from rest_framework.response    import Response
+from rest_framework             import status
+
 
 class VehiculoDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Vehiculo.objects.all()
@@ -69,4 +73,17 @@ class ReservaList(APIView):
         return Response(serializer.data)
 
 
-# Create your views here.
+class ReservaCreateView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = ReservaCreateSerializer(data=request.data)
+        try:
+            if serializer.is_valid(raise_exception=True):
+                reserva = serializer.save()
+                return Response({
+                    "message": "Reserva creada exitosamente", 
+                    "reserva": serializer.data
+                }, status=status.HTTP_201_CREATED)
+        except serializers.ValidationError as v:
+            return Response(v.detail, status=status.HTTP_400_BAD_REQUEST)
+
+

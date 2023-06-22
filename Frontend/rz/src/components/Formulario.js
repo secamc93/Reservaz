@@ -1,13 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import backgroundImage from '../assets/AZ.png';
+import  QRCodeSVG  from 'qrcode.react';
+
 
 function Formulario() {
   const [cedula, setCedula] = useState('');
   const [ruta, setRuta] = useState('');
+  const [rutas, setRutas] = useState([]);
   const [valoresEnviados, setValoresEnviados] = useState([]);
   const [respuesta, setRespuesta] = useState(null);
+  const [error, setError] = useState(null);
+  const [reserva, setReserva] = useState(null);
+
+
+  useEffect(() => {
+    fetch('http://localhost:8000/app1/ruta/')
+      .then(response => response.json())
+      .then(data => setRutas(data))
+      .catch((error) => {
+        console.error('Error:', error);
+        toast.error('Error al obtener las rutas');
+      });
+  }, []);
 
   const handleCedulaChange = (event) => {
     setCedula(event.target.value);
@@ -23,33 +39,53 @@ function Formulario() {
     console.log('Ruta seleccionada:', ruta);
     setValoresEnviados([cedula, ruta]);
 
+      // Imprimir el JSON antes de enviar la petición
+  const requestData = {
+    DNI: cedula,
+    NombreRuta: ruta
+  };
+  console.log('JSON a enviar:', JSON.stringify(requestData));
+
     // hacer la petición HTTP POST aquí
     fetch('http://localhost:8000/app1/reserva/create/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        DNI: cedula,
-        NombreRuta: ruta
-      })
-    })
-      .then(response => {
-        // verificar si la respuesta es exitosa
-        if (!response.ok) {
-          throw new Error(`HTTP error, status = ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log(data); // Mostrar en la consola
-        setRespuesta(data); // Almacenar en el estado
-        toast.success('Solicitud enviada correctamente');
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-        toast.error('Error al enviar la solicitud');
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+},
+    body: JSON.stringify({
+    DNI: Number(cedula),
+    NombreRuta: ruta
+  })
+})
+  .then(response => {
+    if (!response.ok) {
+      // si la respuesta es un error HTTP, convertirla a JSON
+      // y lanzar un error que incluya los detalles del error
+      return response.json().then(errorData => {
+        throw new Error(JSON.stringify(errorData));
       });
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log(data); // Mostrar en la consola
+    setRespuesta(data); // Almacenar en el estado
+    setReserva(data.reserva); // Almacena los datos de la reserva en el estado
+    toast.success('Solicitud enviada correctamente');
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+    // mostrar el error de validación en la interfaz de usuario
+    const errorObject = JSON.parse(error.message);
+    let errorMessage;
+    if (errorObject.non_field_errors && errorObject.non_field_errors.length > 0) {
+        errorMessage = errorObject.non_field_errors[0];
+    } else {
+        errorMessage = 'Ocurrió un error inesperado';
+      }
+    toast.error(`${errorMessage}`);
+    setError(errorMessage); 
+  });
 
     setCedula('');
     setRuta('');
@@ -72,9 +108,9 @@ function Formulario() {
           Ruta:
           <select onChange={handleRutaChange} className="text-center mb-6 p-2 bg-white rounded-md w-full">
             <option value="">Selecciona una ruta</option>
-            <option value="ruta1">Ruta 1</option>
-            <option value="ruta2">Ruta 2</option>
-            <option value="ruta3">Ruta 3</option>
+            {rutas.map(ruta => 
+              <option key={ruta.id} value={ruta.Nombre}>{ruta.Nombre}</option>
+            )}
           </select>
         </label>
 
@@ -84,21 +120,17 @@ function Formulario() {
           className="py-2 m-20 bg-yellow-600 hover:bg-green-200 text-black font-bold rounded-md"
         />
       </form>
-      <div className="mt-2 text-center text-white">
-        {valoresEnviados.length > 0 && (
-          <div>
-            <h2>Valores enviados:</h2>
-            <p>Cédula: {valoresEnviados[0]}</p>
-            <p>Ruta seleccionada: {valoresEnviados[1]}</p>
-          </div>
-        )}
-        {respuesta && (
-          <div  className="mt-2 text-center text-white">
-            <h2>Respuesta de la solicitud:</h2>
-            <p>{JSON.stringify(respuesta)}</p>
-          </div>
-        )}
+      {reserva && (
+      <div>
+        <h2>Datos de la Reserva:</h2>
+        <p>ID: {reserva.id}</p>
+        <p>DNI: {reserva.DNI}</p>
+        <p>Nombre de la Ruta: {reserva.NombreRuta}</p>
+        <p>Fecha de Reserva: {new Date(reserva.FechaReserva).toLocaleDateString()}</p>
+        <h2>Código QR de la Reserva:</h2>
+        <QRCodeSVG value={String(reserva.id)} />
       </div>
+)}
       <ToastContainer /> 
     </div>
   );
